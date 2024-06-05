@@ -13,7 +13,6 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-
   Future<void> init() async {
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('logo');
@@ -31,4 +30,5 @@ class NotificationService {
    Future selectNotification(String payload) async {
       //Handle notification tapped logic here
    }
+
 }

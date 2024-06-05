@@ -1,21 +1,40 @@
 import 'package:demo/notification_service.dart';
+import 'package:demo/scheduledNotification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:permission_handler/permission_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _requestPermissions();
+  tz.initializeTimeZones();
+  tz.setLocalLocation(tz.getLocation('Europe/Berlin')); // Set the timezone to Germany
+  await ScheduledNotificationService().init();
   await NotificationService().init();
   runApp(const MyApp());
 }
 
+Future<void> _requestPermissions() async {
+  if (await Permission.scheduleExactAlarm.request().isGranted) {
+    print('SCHEDULE_EXACT_ALARM permission granted');
+    // The permission was granted
+  } else {
+    print('SCHEDULE_EXACT_ALARM permission denied');
+    // The permission was denied
+    // Optionally, handle the case where permission is denied
+  }
+}
+
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Flutter Demo Local Notifications',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -36,7 +55,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   NotificationService notificationService = NotificationService();
-
+  ScheduledNotificationService scheduledNotificationService = ScheduledNotificationService();
   void _incrementCounter() {
     setState(() {
       _counter++;
@@ -61,8 +80,26 @@ class _MyHomePageState extends State<MyHomePage> {
         platformChannelSpecifics);
   }
 
+  Future<void> _scheduleNotification() async {
+    DateTime scheduledTime = DateTime.now().add(const Duration(seconds: 5));
+    print(scheduledTime);
+    await scheduledNotificationService.flutterLocalNotificationsPlugin.zonedSchedule(
+        _counter, 'Scheduled Notification', 'This is a scheduled notification.',  tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5)), 
+         const NotificationDetails(
+                      android: AndroidNotificationDetails(
+                          'full screen channel id', 'full screen channel name',
+                          channelDescription: 'full screen channel description',
+                          priority: Priority.high,
+                          importance: Importance.high,
+                          fullScreenIntent: true)),
+                  androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+                  uiLocalNotificationDateInterpretation:
+                      UILocalNotificationDateInterpretation.absoluteTime);
+  }
+
   void _killAllNotifications() {
     notificationService.flutterLocalNotificationsPlugin.cancelAll();
+    scheduledNotificationService.cancelAllNotifications();
   }
 
   @override
@@ -86,8 +123,15 @@ class _MyHomePageState extends State<MyHomePage> {
             const SizedBox(height: 20),
             TextButton.icon(
               label: const Text('Delete all Notifications'),
-                onPressed: _killAllNotifications,
-                icon: const Icon(Icons.delete)),
+              onPressed: _killAllNotifications,
+              icon: const Icon(Icons.delete),
+            ),
+            const SizedBox(height: 20),
+            TextButton.icon(
+              label: const Text('Schedule Notification'),
+              onPressed: _scheduleNotification,
+              icon: const Icon(Icons.schedule),
+            ),
           ],
         ),
       ),
@@ -95,7 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
         onPressed: _incrementCounter,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 }
