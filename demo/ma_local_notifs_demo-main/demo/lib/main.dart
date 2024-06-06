@@ -8,10 +8,13 @@ import 'package:permission_handler/permission_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // for scheduled notifications
   await _requestPermissions();
   tz.initializeTimeZones();
-  tz.setLocalLocation(tz.getLocation('Europe/Berlin')); // Set the timezone to Germany
+  tz.setLocalLocation(
+      tz.getLocation('Europe/Berlin')); // Set the timezone to Germany
   await ScheduledNotificationService().init();
+  // for normal notifications
   await NotificationService().init();
   runApp(const MyApp());
 }
@@ -26,7 +29,6 @@ Future<void> _requestPermissions() async {
     // Optionally, handle the case where permission is denied
   }
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -55,7 +57,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   NotificationService notificationService = NotificationService();
-  ScheduledNotificationService scheduledNotificationService = ScheduledNotificationService();
+  ScheduledNotificationService scheduledNotificationService =
+      ScheduledNotificationService();
   void _incrementCounter() {
     setState(() {
       _counter++;
@@ -83,18 +86,22 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _scheduleNotification() async {
     DateTime scheduledTime = DateTime.now().add(const Duration(seconds: 5));
     print(scheduledTime);
-    await scheduledNotificationService.flutterLocalNotificationsPlugin.zonedSchedule(
-        _counter, 'Scheduled Notification', 'This is a scheduled notification.',  tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5)), 
-         const NotificationDetails(
-                      android: AndroidNotificationDetails(
-                          'full screen channel id', 'full screen channel name',
-                          channelDescription: 'full screen channel description',
-                          priority: Priority.high,
-                          importance: Importance.high,
-                          fullScreenIntent: true)),
-                  androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-                  uiLocalNotificationDateInterpretation:
-                      UILocalNotificationDateInterpretation.absoluteTime);
+    await scheduledNotificationService.flutterLocalNotificationsPlugin
+        .zonedSchedule(
+            _counter,
+            'Scheduled Notification',
+            'This is a scheduled notification.',
+            tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5)),
+            const NotificationDetails(
+                android: AndroidNotificationDetails(
+                    'full screen channel id', 'full screen channel name',
+                    channelDescription: 'full screen channel description',
+                    priority: Priority.high,
+                    importance: Importance.high,
+                    fullScreenIntent: true)),
+            androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime);
   }
 
   void _killAllNotifications() {
